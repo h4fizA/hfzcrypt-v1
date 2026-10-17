@@ -1,61 +1,60 @@
-# 🛡️ HFZCrypt v1.0 — High-Performance File Encryption Tool
+# HFZCrypt - Dosya Şifreleme Aracı
 
-**HFZCrypt**, saf **C** dilinde yazılmış, **OpenSSL 3.0+ EVP API** altyapısını kullanan komut satırı tabanlı yüksek başarımlı ve güvenli bir dosya şifreleme aracıdır. 
+HFZCrypt, C dilinde yazılmış ve OpenSSL 3.0+ EVP API altyapısını kullanan komut satırı tabanlı bir dosya şifreleme aracıdır.
 
-Hem **AES-256-GCM** hem de **ChaCha20-Poly1305** AEAD (Authenticated Encryption with Associated Data) algoritmalarını destekler. Büyük dosyaları 1 MB'lık parçalı akış (streaming buffer) yöntemiyle belleği şişirmeden ultra hızlı bir şekilde şifreler ve çözer.
-
----
-
-## ✨ Öne Çıkan Özellikler
-
-- **Çift AEAD Algoritması:** Donanım ivmeli **AES-256-GCM** ve yazılımsal optimize **ChaCha20-Poly1305** şifreleme desteği.
-- **Yüksek Güvenlikli KDF:** Parolalardan 600.000 iterasyonlu `PBKDF2-HMAC-SHA256` ile 256-bit kriptografik anahtar türetimi.
-- **CSRNG Rastgelelik:** `OpenSSL RAND_bytes` ile üretilen 16-byte Salt ve 12-byte IV (Nonce).
-- **Veri Bütünlüğü ve Doğrulama:** GCM / Poly1305 **Authentication Tag** (16-byte) doğrulaması. Yanlış parola veya kurcalanmış veride dosya derhal reddedilir.
-- **Akış Yapısı (Streaming I/O):** 1 MB sabit bellek tamponu sayesinde gigabaytlarca büyüklükteki dosyaları minimum RAM kullanımıyla şifreleme.
-- **Sihirli Başlık (Magic Header):** `"hfz1638!"` imzası ile format doğrulaması.
-- **Gizli Parola Girdisi:** `termios` kütüphanesi ile terminalde yazılan parolanın gizlenmesi (`~ECHO`).
-- **POSIX CLI:** `getopt_long` ile esnek komut satırı parametreleri (`-e`, `-d`, `-a`).
+AES-256-GCM ve ChaCha20-Poly1305 AEAD algoritmalarını destekler. Büyük dosyaları 1 MB'lık parçalar halinde akış (streaming) yöntemiyle işlediği için sistemi yormaz ve minimum bellek tüketir.
 
 ---
 
-## ⚡ 1 GB Dosya Performans Benchmark Testi
+## Özellikler
 
-Aşağıdaki test sonuçları **1 GB** büyüklüğündeki test dosyası üzerinde elde edilmiştir:
+- **Çift Algoritma Desteği:** Donanım destekli AES-256-GCM veya ChaCha20-Poly1305.
+- **Anahtar Türetimi (KDF):** Parolalardan anahtar üretimi için 600.000 iterasyonlu PBKDF2-HMAC-SHA256 kullanılır.
+- **Rastgele Değerler:** Salt (16 bayt) ve IV/Nonce (12 bayt) değerleri OpenSSL RAND_bytes ile üretilir.
+- **Bütünlük Doğrulaması:** 16 baytlık Authentication Tag doğrulaması yapılır; parola yanlışsa ya da dosya kurcalanmışsa işlem hemen durdurulur ve dosya açılmaz.
+- **Düşük Bellek Kullanımı:** Dosyaları 1 MB sabit tamponla parça parça okuyup yazar, gigabaytlarca büyüklükteki dosyalarda RAM tüketimi sabit kalır.
+- **Format Doğrulaması:** Dosya başında hfz1638! sihirli bayt kontrolü bulunur.
+- **Güvenli Parola Girişi:** Parola yazılırken termios ile ekranda gizlenir.
+- **Argüman Yönetimi:** Standart getopt_long yapısı kullanılır.
 
-| Algoritma | Şifreleme (Encrypt) | Şifre Çözme (Decrypt) | Ortalama Hız |
+---
+
+## Performans Testi (1 GB Dosya)
+
+Aşağıdaki ölçümler 1 GB boyutunda rastgele bir test dosyasıyla alınmıştır:
+
+| Algoritma | Şifreleme | Şifre Çözme | Ortalama Hız |
 |---|---|---|---|
-| 🔒 **AES-256-GCM** | **~0.94 s** | **~1.01 s** | **~1.05 GB/s** |
-| ⚡ **ChaCha20-Poly1305** | **~1.04 s** | **~1.28 s** | **~0.96 GB/s** |
+| AES-256-GCM | ~0.94 sn | ~1.01 sn | ~1.05 GB/sn |
+| ChaCha20-Poly1305 | ~1.04 sn | ~1.28 sn | ~0.96 GB/sn |
 
-> 🚀 **AES-NI** destekli modern işlemcilerde AES-256-GCM donanımsal ivme ile 1 GB veriyi **1 saniyenin altında** şifrelemektedir!
+*Not: AES-NI komut setini destekleyen işlemcilerde donanımsal hızlandırma sayesinde AES-256-GCM ile 1 GB dosya 1 saniyenin altında işlenir.*
 
 ---
 
-## 📦 `.hfz` Paket Başlık Formatı
+## Dosya Başlık Formatı (.hfz)
 
-Şifrelenmiş her dosyanın başına 53 baytlık sabit bir binary başlık (`Paket`) eklenir:
+Şifrelenen her dosyanın başına 53 baytlık sabit bir başlık eklenir:
 
-```text
 +-------------------+----------------+---------------+---------------+---------------+----------------------+
 | Magic Header (8B) | Algoritma (1B) | GCM/Tag (16B) |    IV (12B)   |   Salt (16B)  | Şifreli Veri (N B)   |
 |   "hfz1638!"      | 1:AES / 2:CC20 | Auth Tag      |  Random Nonce | PBKDF2 Salt   | Encrypted Payload    |
 +-------------------+----------------+---------------+---------------+---------------+----------------------+
-```
 
 ---
 
-## 🛠️ Derleme ve Kurulum
+## Derleme ve Kurulum
 
 ### Bağımlılıklar
-Debian / Ubuntu / Parrot OS için OpenSSL geliştirme paketleri:
+
+Debian, Ubuntu veya Pardus / Parrot OS üzerinde derlemek için gereken paketler:
 
 ```bash
 sudo apt update
 sudo apt install build-essential libssl-dev
 ```
 
-### Derleme (O3 Optimizasyonlu)
+### Derleme
 
 ```bash
 gcc -O3 hfzcrypt.c crypto.c -o hfzcrypt -lcrypto
@@ -63,55 +62,52 @@ gcc -O3 hfzcrypt.c crypto.c -o hfzcrypt -lcrypto
 
 ---
 
-## 🚀 Kullanım ve Örnekler
+## Kullanım
 
-### Yardım Menüsü
+### Yardım
+
 ```bash
 ./hfzcrypt -h
 ```
 
-### 1. Dosya Şifreleme (`-e`)
+### 1. Dosya Şifreleme (-e)
 
-**AES-256-GCM ile Şifreleme:**
+AES-256-GCM ile şifreleme:
 ```bash
 ./hfzcrypt -e belge.pdf -a aes
 ```
-*Çıktı:* `belge.pdf.hfz` adında şifreli dosya oluşturulur.
+*Çıktı: belge.pdf.hfz*
 
-**ChaCha20-Poly1305 ile Şifreleme:**
+ChaCha20-Poly1305 ile şifreleme:
 ```bash
 ./hfzcrypt -e video.mp4 -a chacha
 ```
-*Çıktı:* `video.mp4.hfz` adında şifreli dosya oluşturulur.
+*Çıktı: video.mp4.hfz*
 
----
-
-### 2. Dosya Şifresi Çözme (`-d`)
+### 2. Dosya Şifresini Çözme (-d)
 
 ```bash
 ./hfzcrypt -d belge.pdf.hfz
 ```
-*Çıktı:* Başlık okunur, algoritma otomatik tespit edilir ve orijinal `belge.pdf` dosyası geri elde edilir.
+*Algoritma başlık bilgisinden otomatik algılanır ve orijinal dosya çıkarılır.*
 
 ---
 
-## 📁 Proje Dosya Yapısı
+## Dosya Yapısı
 
 ```text
 dosya_encrypt/
-├── hfzcrypt.c      # CLI parametre kontrolü & terminal parola arayüzü
-├── crypto.c        # OpenSSL EVP AES-GCM / ChaCha20 streaming kripto motoru
-├── crypto.h        # Başlık veri yapıları (Paket) ve fonksiyon prototipleri
-└── README.md       # Proje dokümantasyonu
+├── hfzcrypt.c      # CLI argüman yönetimi ve parola girdi arayüzü
+├── crypto.c        # OpenSSL EVP streaming şifreleme motoru
+├── crypto.h        # Başlık yapıları ve fonksiyon tanımları
+└── README.md       # Dokümantasyon
 ```
 
 ---
 
-## 📄 Lisans
+## Lisans
 
-Bu proje **Apache License 2.0** altında lisanslanmıştır.
+Bu proje Apache License 2.0 ile lisanslanmıştır.
 
----
-
-**Geliştirici:** h4fizA
-**Versiyon:** v1.0
+**Geliştirici:** h4fizA  
+**Sürüm:** 1.0
